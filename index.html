@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KELLS Token Claim</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h2 {
+            color: #333;
+        }
+        #claimButton {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        #claimButton:hover {
+            background-color: #45a049;
+        }
+        #status {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        .success {
+            color: #4CAF50;
+        }
+        .error {
+            color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>KELLS TOKEN Claim</h2>
+        <button id="claimButton">Claim 200 KELLS</button>
+        <p id="status"></p>
+    </div>
+
+    <script>
+        const claimContractAddress = "0x9f1224Debc60d75b2Ee000bB38e054436a80b426";
+        const claimAbi = [
+            { "inputs": [], "name": "claim", "outputs": [], "stateMutability": "nonpayable", "type": "function" }
+        ];
+        const NEXUS_CHAIN_ID = "0x188";
+        const NEXUS_RPC_URL = "https://rpc.nexus.xyz/http";
+        const NEXUS_EXPLORER_URL = "https://explorer.nexus.xyz";
+
+        async function switchToNexusChain() {
+            try {
+                await window.ethereum.request({
+                    method: "wallet_addEthereumChain",
+                    params: [{
+                        chainId: NEXUS_CHAIN_ID,
+                        chainName: "Nexus Chain",
+                        nativeCurrency: { name: "Nexus", symbol: "NEX", decimals: 18 },
+                        rpcUrls: [NEXUS_RPC_URL],
+                        blockExplorerUrls: [NEXUS_EXPLORER_URL]
+                    }]
+                });
+                return true;
+            } catch (error) {
+                console.error("Failed to switch network:", error);
+                return false;
+            }
+        }
+
+        async function claimTokens() {
+            const statusElement = document.getElementById("status");
+            statusElement.className = "";
+            statusElement.innerText = "Processing...";
+
+            if (typeof window.ethereum !== "undefined") {
+                try {
+                    const web3 = new Web3(window.ethereum);
+                    await window.ethereum.request({ method: "eth_requestAccounts" });
+
+                    const accounts = await web3.eth.getAccounts();
+                    const network = await web3.eth.getChainId();
+
+                    if (network !== parseInt(NEXUS_CHAIN_ID, 16)) {
+                        statusElement.innerText = "Switching to Nexus Chain...";
+                        const switched = await switchToNexusChain();
+                        if (!switched) {
+                            throw new Error("Failed to switch to Nexus Chain");
+                        }
+                        statusElement.innerText = "Please try claiming again.";
+                        return;
+                    }
+
+                    const claimContract = new web3.eth.Contract(claimAbi, claimContractAddress);
+
+                    await claimContract.methods.claim().send({ from: accounts[0] });
+                    statusElement.className = "success";
+                    statusElement.innerText = "Claim successful! 200 KELLS sent to your wallet.";
+                } catch (error) {
+                    console.error(error);
+                    statusElement.className = "error";
+                    statusElement.innerText = `Error: ${error.message || "Failed to claim tokens"}`;
+                }
+            } else {
+                statusElement.className = "error";
+                statusElement.innerText = "Please install MetaMask!";
+            }
+        }
+
+        document.getElementById("claimButton").addEventListener("click", claimTokens);
+    </script>
+</body>
+</html>
