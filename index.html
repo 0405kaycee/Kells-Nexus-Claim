@@ -25,7 +25,7 @@
         h2 {
             color: #333;
         }
-        #claimButton {
+        button {
             background-color: #4CAF50;
             border: none;
             color: white;
@@ -39,7 +39,7 @@
             border-radius: 5px;
             transition: background-color 0.3s;
         }
-        #claimButton:hover {
+        button:hover {
             background-color: #45a049;
         }
         #status {
@@ -57,6 +57,7 @@
 <body>
     <div class="container">
         <h2>KELLS TOKEN Claim</h2>
+        <button id="switchNetworkButton">Switch to Nexus Chain</button>
         <button id="claimButton">Claim 200 KELLS</button>
         <p id="status"></p>
     </div>
@@ -66,7 +67,7 @@
         const claimAbi = [
             { "inputs": [], "name": "claim", "outputs": [], "stateMutability": "nonpayable", "type": "function" }
         ];
-        const NEXUS_CHAIN_ID = "392";
+        const NEXUS_CHAIN_ID = "392"; // 392 in hexadecimal
         const NEXUS_RPC_URL = "https://rpc.nexus.xyz/http";
         const NEXUS_EXPLORER_URL = "https://explorer.nexus.xyz";
 
@@ -82,10 +83,10 @@
                         blockExplorerUrls: [NEXUS_EXPLORER_URL]
                     }]
                 });
-                return true;
+                console.log("Switched to Nexus Chain");
             } catch (error) {
                 console.error("Failed to switch network:", error);
-                return false;
+                alert("Error switching to Nexus Chain. Please add it manually in MetaMask.");
             }
         }
 
@@ -104,11 +105,7 @@
 
                     if (network !== parseInt(NEXUS_CHAIN_ID, 16)) {
                         statusElement.innerText = "Switching to Nexus Chain...";
-                        const switched = await switchToNexusChain();
-                        if (!switched) {
-                            throw new Error("Failed to switch to Nexus Chain");
-                        }
-                        statusElement.innerText = "Please try claiming again.";
+                        await switchToNexusChain();
                         return;
                     }
 
@@ -128,6 +125,7 @@
             }
         }
 
+        document.getElementById("switchNetworkButton").addEventListener("click", switchToNexusChain);
         document.getElementById("claimButton").addEventListener("click", claimTokens);
     </script>
 </body>
